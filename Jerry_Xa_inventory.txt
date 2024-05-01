@@ -1,0 +1,5 @@
+wooden sword ATT: 5 |  STR: 4
+wooden helmet HP: 21
+wooden pants DEF: 4
+wooden armor HP: 20| DEF: 6
+wooden gloves HP: 21| AGI: 2 |  STR: 5
