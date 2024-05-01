@@ -14,6 +14,7 @@ int selection_menu(string existing_character)//need to IMPLEMENT exiting game in
 	cout << "-----------------------------------------" << endl;
 	cout << "0.Dungeon" << endl << "1.Blacksmith" << endl << "2.Runemaster" << endl << "3.Stash" << endl;
 	cout << "You can stop playing by typing 4!" << endl;
+	//just a modification to see if changes are occurring on github
 	cout << "Please type 0,1,2,3 or 4" << endl;
 	int option;
 	cin >> option;
