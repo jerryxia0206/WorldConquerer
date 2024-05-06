@@ -5,6 +5,7 @@
 #include <direct.h>
 #include <time.h> 
 #include <cstdlib> 
+#include <cstdio>
 #include "GameStart.h"
 using namespace std;
 
@@ -14,7 +15,6 @@ int selection_menu(string existing_character)//need to IMPLEMENT exiting game in
 	cout << "-----------------------------------------" << endl;
 	cout << "0.Dungeon" << endl << "1.Blacksmith" << endl << "2.Runemaster" << endl << "3.Stash" << endl;
 	cout << "You can stop playing by typing 4!" << endl;
-	//just a modification to see if changes are occurring on github
 	cout << "Please type 0,1,2,3 or 4" << endl;
 	int option;
 	cin >> option;
@@ -67,6 +67,7 @@ int selection_menu(string existing_character)//need to IMPLEMENT exiting game in
 		}
 		case 4:
 		{
+			cout << "Ending the game...." << endl;
 			return 0;
 		}
 
@@ -99,26 +100,26 @@ string* current_stats(string existing_character)//This has been finished impleme
 			current_attack = line;//assigning the line with the keyword "current_attack", instead of overwrite attack, because the if statement above 
 
 		}
-		else if (line.find(def) != string::npos) //gotta watchout .find only finds the first element in the textfile that matches attack string
+		else if (line.find(agi) != string::npos) //gotta watchout .find only finds the first element in the textfile that matches attack string
 		{
 			found[1] = true;
-			current_def = line;//assigning the line with the keyword "current_attack", instead of overwrite attack, because the if statement above 
+			current_agi = line;//assigning the line with the keyword "current_def", instead of overwrite attack, because the if statement above 
 
 		}
-		else if (line.find(agi) != string::npos) 
+		else if (line.find(def) != string::npos) 
 		{
 			found[2] = true;
-			current_agi = line;
-		}
-		else if (line.find(str) != string::npos)
-		{
-			found[3] = true;
-			current_str = line;
+			current_def = line;
 		}
 		else if (line.find(dex) != string::npos)
 		{
-			found[4] = true;
+			found[3] = true;
 			current_dex = line;
+		}
+		else if (line.find(str) != string::npos)
+		{
+			found[4] = true;
+			current_str = line;
 		}
 	}
 	current_attack= current_attack.substr(5, current_attack.length() - 1);//extracting current attack power
@@ -127,10 +128,10 @@ string* current_stats(string existing_character)//This has been finished impleme
 	current_str = current_str.substr(5, current_str.length() - 1);//extracting current attack power
 	current_dex= current_dex.substr(5, current_dex.length() - 1);//extracting current attack power
 	stats[0] = current_attack;
-	stats[1] = current_def;
-	stats[2] = current_agi;
-	stats[3] = current_str;
-	stats[4] = current_dex;
+	stats[1] = current_agi;
+	stats[2] = current_def; 
+	stats[3] = current_dex;
+	stats[4] = current_str;
 	
 
 	return stats;
@@ -175,6 +176,8 @@ int dungeon_selection(string existing_character)
 			if (level_confirmation == "1")//the player would like to go to this level
 			{
 				cout << "You are going to level" << level_selection << endl;
+				string* stats_array = current_stats(existing_character);
+				cout << "You current stats are (ATT, AGI, DEF, DEX, STR)" << stats_array[0] << "," << stats_array[1] << "," << stats_array[2] << "," << stats_array[3] << "," << stats_array[4];
 				//IMPLEMENT start dungeon();
 			}
 			else//the player would like to go to another level
@@ -220,7 +223,6 @@ int continue_game(string existing_character)
 			 
 		}
 	}
-	myfile.close();
 	current_level = current_level.substr(6, current_level.length() - 1);//taking a substring of the line with keyword level and find level number
 	cout << "You are currently level " << current_level << endl;
 	string* stats_character;//holds the address to the array with stats
@@ -235,7 +237,7 @@ int continue_game(string existing_character)
 int generating(string character_name)//generating your character
 {
 	
-	string character_save = character_name + ".txt";//creating individual character saves
+	string character_save =  character_name + ".txt";//creating individual character saves
 	ofstream myfile;
 	myfile.open(character_save, ios::app);
 	cout << "Welcome to World of Madness! Here you will fight and improve yourself endlessly! " << endl;
@@ -260,6 +262,7 @@ int generating(string character_name)//generating your character
 			cin >> yes_no;
 			if (yes_no == 1)
 			{
+				srand(time(0));
 				myfile << "Barbarian" << endl;
 				myfile << "level 0" << endl;//defining the stats of a barbarian
 				myfile << "MAX dungeon_lvl = 0" << endl;//starting character will have a MAX dungeon_level of 0
@@ -285,7 +288,7 @@ int generating(string character_name)//generating your character
 				myfile.close();
 				string character_inventory = character_name + "_inventory.txt";
 				myfile.open(character_inventory,ios::app);
-				srand(time(0));//generating a random seed for rand, probably should create a data base for a lot of variety of weapons and armors....
+				//generating a random seed for rand, probably should create a data base for a lot of variety of weapons and armors....
 				myfile << "wooden sword" << " ATT: " << to_string(3 + rand() % 3) << " | " << " STR: " << to_string(2 + rand() % 3) << endl;//generating random stats for equipment
 				myfile << "wooden helmet" << " HP: " << to_string(20 + rand() % 3) << endl;
 				myfile << "wooden pants" << " DEF: " << to_string( 3 + rand() % 3) << endl;
@@ -332,84 +335,199 @@ bool find_charactername(string character_name)
 		string line;
 
 		bool found = false;
-		while (std::getline(myfile, line) && !found)
+		while (!myfile.eof())//reach the end of the file
 		{
-			if (line.find(character_name) != string::npos) //HERE!
+			getline(myfile, line);
+			if(line == character_name)
 			{
 				found = true;
+				break;
 			}
 		}
 		return found;
 }
+void delete_character_save(string existing_character)
+{
+	//create a temporary file to save the characters that aren't getting deleted
+	ifstream myfile("Save.txt");
+	string line;
+	ofstream temp("Save_New.txt");
+	while (!myfile.eof())//reach the end of the file
+	{
+		getline(myfile, line);
+		if (line != existing_character)
+		{
+			temp << line << endl; //adding the characters to the temporary file (that doesn't contain the existing character)
+		}
+	}
+	temp.close();
+	myfile.close();
+	string delete_save =  "Save.txt";
+	remove(delete_save.c_str());
+	rename("Save_New.txt", "Save.txt");
+	string character_file = existing_character + ".txt";
+	remove(character_file.c_str());//using c_str to return a pointer to the array of chars made up of the "character_file_path" string
+	string inventory_file = existing_character + "_inventory.txt";
+	remove(inventory_file.c_str());
+	string town_file = existing_character + "_town.txt";
+	remove(town_file.c_str());
 
+}
+int delete_character(string existing_character)//implementing deletion of character when the game first boot
+{
+	
+	bool delete_char;
+	cout << "-----------------------------------------" << endl;
+	if (find_charactername(existing_character) == true)//look for the name of the character you are trying to delete, if found we proceed
+	{
+		cout << "This character has been found, would you like to delete character? 1: Yes 0: No" << endl;
+		cin >> delete_char;
+		if (delete_char == true)
+		{
+			string character_name;
+			cout << "If you would like delete your character, please reenter the name of the character you are deleting (WARNING! your character would be deleted if you enter the correct name" << endl;//as an insurance, the player would be asked to reenter their character name
+			cin >> character_name;
+			if (character_name == existing_character)//if the character names match, we are proceeding to delete
+			{
+				//DELETE all character files
+				delete_character_save(existing_character);
+				begin_game();
+				
+			}
+			else 
+			{
+				cout << "Your entry doesn't match the name of the character you are deleting" << endl;
+				cout << "Would you like to try again" << endl;
+				cin >> delete_char;//the input would determine whether the player would like to try to delete their character again ;
+				if (delete_char == true)
+				{
+					cout << "Enter the name of the character you would like to delete: " << endl;
+					string character_name;
+					cin >> character_name;
+					delete_character(character_name);//the function would run again
+
+				}
+				else 
+				{
+					begin_game();//go back to the beginning of the game becuase the player has been determined to not want to delete their character
+				}
+			}
+
+		}
+		else 
+		{
+			begin_game();
+		}
+
+	}
+	else
+	{
+		cout << "Character name is not found" << endl; //warns the player that the character they are trying to delete is not found
+		begin_game();
+	}
+	return 0;
+}
 
 int begin_game()//need to implement if a character with the same name as been found, we need to choose a different name
 {
+	cout << "-----------------------------------------" << endl; // for asethetic reasons
 	cout << "Welcome to Dungeon Conqueror!" << endl;
 	bool creating_new_character = 0;//determine whether player wanted to create new character
-	cout << "Would you like to play from a previous save? 1: Yes 0: No " << endl;//if the player have played before or havent played before we provide options
-	bool play = 0;
+	cout << "Would you like to play from a previous save? 2:Delete character 1: Yes 0: No " << endl;//if the player have played before or havent played before we provide options
+	int play ;
 	cin >> play;
-	if (play == 1) {
-		cout << "What character would you like to play? " << endl;//loading save
-		ifstream  myfile("Save.txt");
-		string line;
-		string existing_character;//states which existing character should be played
-		while (!myfile.eof())//basically runs until endoffile thus eof, outputs on console which characters are available
-		{
-			getline(myfile, line);
-			cout << "" << line << endl;
-		}
-		cin >> existing_character;
-		cout << "Generating dungeons for " << existing_character << endl;//continue playing the saved character
-		cout << "-----------------------------------------" << endl;
-		continue_game(existing_character);
-	}
-
-	if (play == 0)
+	switch (play)
 	{
-		cout << "Would you like to make a new character? 1: Yes 0: No" << endl;//ask if the player would like to make a new character
-		cin >> creating_new_character;
-
-	}
-	if (creating_new_character == 1)
-	{
-		ofstream myfile;
-		myfile.open("Save.txt", ios::app);
-		string charactername;
-		cout << "Enter your character name! " << endl;//enter your character name
-		getline(cin.ignore(100, '\n'), charactername);
-		if (find_charactername(charactername) == false)
+		case 0:
 		{
-			cout << "You character name is " << charactername << endl;
-			bool Yes_No;
-			cout << "Are you sure this is your name? 1: Yes 0: No" << endl;
-			cin >> Yes_No;
-			while (Yes_No == 0)
+			cout << "Would you like to make a new character? 1: Yes 0: No" << endl;//ask if the player would like to make a new character
+			cin >> creating_new_character;
+
+
+			if (creating_new_character == 1)
 			{
-				int length_charactername = int(charactername.length()) - 1;//find length of the charactername
-				cout << "Reenter your character name!" << endl;
-				getline(cin.ignore(length_charactername, '\n'), charactername);//taking your input as character name, ignore get rid of the current input
-				cout << "You character name is " << charactername << endl;//output your character name
-				cout << "Are you sure this is your name? 1: Yes 0: No" << endl;//are you sure you are going with your name
-				cin >> Yes_No;//take your input and if no reenter your name
+				ofstream myfile;
+				myfile.open("Save.txt", ios::app);
+				string charactername;
+				cout << "Enter your character name! " << endl;//enter your character name
+				getline(cin.ignore(100, '\n'), charactername);
+				if (find_charactername(charactername) == false)
+				{
+					cout << "You character name is " << charactername << endl;
+					bool Yes_No;
+					cout << "Are you sure this is your name? 1: Yes 0: No" << endl;
+					cin >> Yes_No;
+					while (Yes_No == 0)
+					{
+						int length_charactername = int(charactername.length()) - 1;//find length of the charactername
+						cout << "Reenter your character name!" << endl;
+						getline(cin.ignore(length_charactername, '\n'), charactername);//taking your input as character name, ignore get rid of the current input
+						cout << "You character name is " << charactername << endl;//output your character name
+						cout << "Are you sure this is your name? 1: Yes 0: No" << endl;//are you sure you are going with your name
+						cin >> Yes_No;//take your input and if no reenter your name
 
+					}
+					myfile << charactername << std::endl;//only add character name if it is not in the save file
+					generating(charactername);
+					return 0;
+				}
+				else {
+					cout << "A character with similar name has been found";
+					//Would you like to use a different name? IMPLEMENTATION
+				}
 			}
-			myfile << charactername << std::endl;//only add character name if it is not in the save file
-			myfile.close();
-			generating(charactername);
 		}
-		else {
-			cout << "A character with similar name has been found";
-			//Would you like to use a different name? IMPLEMENTATION
+		case 1 :
+		 {//if the player wants to play from a previous save
+			cout << "What character would you like to play? " << endl;//loading save
+			ifstream  myfile("Save.txt");
+			string line;
+			string existing_character;//states which existing character should be played
+			while (!myfile.eof())//basically runs until endoffile thus eof, outputs on console which characters are available
+			{
+				getline(myfile, line);
+				cout << "" << line << endl;
+			}
+			cin >> existing_character;
+			bool found = find_charactername(existing_character);//try to find the existing character name
+
+			while (found == false)//if the character hasn't been found ask user to reenter the name
+			{
+				cout << "No characters with such a name has been found, please enter a different character name:" << endl;
+				cin >> existing_character;
+				found = find_charactername(existing_character);
+			}
+			if (found == true)//if the character has been found, continue game
+			{
+				cout << "A character has been found with the entered name" << endl;
+				cout << "Generating dungeons for " << existing_character << endl;//continue playing the saved character
+				cout << "-----------------------------------------" << endl;
+				continue_game(existing_character);
+				return 0;
+			}
+		}
+
+		
+		case 2 :
+		{
+			cout << "-----------------------------------------" << endl;
+			cout << "What is the name of the character you would like to delete?: " << endl;
+			string delete_character_name;
+			cin >> delete_character_name;
+			delete_character(delete_character_name);
+
 		}
 	}
 	return 0;
 }
 
 
-int main() {
-
+int main() 
+{
+	if (!_mkdir("Characters"))
+	{
+		_mkdir("Characters");
+	}
 	begin_game();
 
 }
