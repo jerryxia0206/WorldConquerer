@@ -9,11 +9,12 @@
 #include "GameStart.h"
 #include <windows.h> 
 using namespace std;
-void loot_generate_stats(string existing_character, int level_selected, string rarity, string type)
+
+void loot_generate_stats(string existing_character, int level_selected, int left_over_rune_powder, string rarity, string type, bool crafting)//it is also used for crafting
 {
 	//randomizes the loot stats based on level_selected and type and rarity
 	float rune_stat{};
-	float* chaos_stats = new float [5] {};
+	float* chaos_stats = new float [4] {};
 	srand(time(0) + rand());
 	if (rarity == "common")
 	{
@@ -33,23 +34,107 @@ void loot_generate_stats(string existing_character, int level_selected, string r
 			chaos_stats[3] = 25.0 + level_selected * 2.5 + (float(rand()) / float(RAND_MAX)) * level_selected / 3;//DEX
 		}
 	}
-	ofstream myfile;
-	myfile.open("Characters/" + existing_character + "_stash.txt", ios::app);
-	if(type == "HP")
+	else if (rarity == "magic")
 	{
-		myfile << "Rarity: " << rarity << "," << "Type: " << type << "," << "Stats: " << rune_stat << "\n";
+		if (type == "HP")//depeneding on different types of runes, there will be different stats
+		{
+			rune_stat = 20 + level_selected / 1.0 + (float(rand()) / float(RAND_MAX)) * level_selected / 3.0;
+		}
+		else if (type == "Str" || type == "Agi" || type == "Dex")
+		{
+			rune_stat = 190.0 + level_selected * 6.0 + (float(rand()) / float(RAND_MAX)) * level_selected / 0.3;
+		}
+		else if (type == "Chaos")
+		{
+			chaos_stats[0] = 10.0 + level_selected / 2.0 + (float(rand()) / float(RAND_MAX)) * level_selected / 8.33;//HP
+			chaos_stats[1] = 150.0 + level_selected * 4.8 + (float(rand()) / float(RAND_MAX)) * level_selected;//AGI
+			chaos_stats[2] = 150.0 + level_selected * 4.8 + (float(rand()) / float(RAND_MAX)) * level_selected;//STR
+			chaos_stats[3] = 150.0 + level_selected * 4.8 + (float(rand()) / float(RAND_MAX)) * level_selected;//DEX
+		}
 	}
-	else if (type == "Str" || type == "Agi" || type == "Dex")
+	else if (rarity == "rare")
 	{
-		myfile << "Rarity: " << rarity << "," << "Type: " << type << "," << "Stats: " << rune_stat << "%"  <<  "\n";
+		if (type == "HP")//depeneding on different types of runes, there will be different stats
+		{
+			rune_stat = 75.0 + level_selected * 1.20 + (float(rand()) / float(RAND_MAX)) * level_selected * 1.25;
+		}
+		else if (type == "Str" || type == "Agi" || type == "Dex")
+		{
+			rune_stat = 680.0 + level_selected * 9.0 + (float(rand()) / float(RAND_MAX)) * level_selected * 1.20;
+		}
+		else if (type == "Chaos")
+		{
+			chaos_stats[0] = 58.0 + level_selected / 0.6 + (float(rand()) / float(RAND_MAX)) * level_selected / 2.33;//HP
+			chaos_stats[1] = 550.0 + level_selected * 7.78 + (float(rand()) / float(RAND_MAX)) * level_selected * 2.55;//AGI
+			chaos_stats[2] = 550.0 + level_selected * 7.78 + (float(rand()) / float(RAND_MAX)) * level_selected * 2.55;//STR
+			chaos_stats[3] = 550.0 + level_selected * 7.78 + (float(rand()) / float(RAND_MAX)) * level_selected * 2.55;//DEX
+		}
 	}
-	else if (type == "Chaos")
+	if(crafting == false)
 	{
-		myfile << "Rarity: " << rarity << "," << "Type: " << type << "," << "HP: " << chaos_stats[0] << "%" << "," << "AGI: " << chaos_stats[1] << "%" << "," << "STR: " << chaos_stats[2] << "%" << "," << "DEX: " << chaos_stats[3] << "%" << "\n";
+		ofstream myfile;
+		myfile.open("Characters/" + existing_character + "_stash.txt", ios::app);
+		if (type == "HP")
+		{
+			myfile << "Level: " << level_selected << "," << "Rarity: " << rarity << "," << "Type: " << type << "," << "Stats: " << rune_stat << "\n";
+		}
+		else if (type == "Str" || type == "Agi" || type == "Dex")
+		{
+			myfile << "Level: " << level_selected << "," << "Rarity: " << rarity << "," << "Type: " << type << "," << "Stats: " << rune_stat << "%" << "\n";
+		}
+		else if (type == "Chaos")
+		{
+			myfile << "Level: " << level_selected << "," << "Rarity: " << rarity << "," << "Type: " << type << "," << "HP: " << chaos_stats[0] << "," << "AGI: " << chaos_stats[1] << "%" << "," << "STR: " << chaos_stats[2] << "%" << "," << "DEX: " << chaos_stats[3] << "%" << "\n";
+		}
+		myfile.close();
+		delete[] chaos_stats;
 	}
-	myfile.close();
-	delete[] chaos_stats;
+	else
+	{
+		ofstream myfile;
+		string new_stash_file_name = "Characters/" + existing_character + "_new_stash.txt";
+		myfile.open(new_stash_file_name, ios::app);//open the new stash file for editing
+		myfile << "Rune Powder: " << left_over_rune_powder << "\n";
+		ifstream old_stash_file;//open the old stash file for reading
+		string old_stash_file_name = "Characters/" + existing_character + "_stash.txt";
+		old_stash_file.open(old_stash_file_name);//open the old stash file for writing the previous runes into the new stash file
+		int counter = 1;
+		string rune;
+		while (getline(old_stash_file, rune))//will read every line and store them 
+		{
+			if (counter != 1)//we do not want the rune powder information from before crafting added into the new file
+			{
+				counter++;
+				myfile << rune << "\n";
+
+			}
+			else
+			{
+				counter++;
+			}
+		}
+		old_stash_file.close();
+		if (type == "HP")
+		{
+			myfile << "Level: " << level_selected << "," << "Rarity: " << rarity << "," << "Type: " << type << "," << "Stats: " << rune_stat << "\n";
+		}
+		else if (type == "Str" || type == "Agi" || type == "Dex")
+		{
+			myfile << "Level: " << level_selected << "," << "Rarity: " << rarity << "," << "Type: " << type << "," << "Stats: " << rune_stat << "%" << "\n";
+		}
+		else if (type == "Chaos")
+		{
+			myfile << "Level: " << level_selected << "," << "Rarity: " << rarity << "," << "Type: " << type << "," << "HP: " << chaos_stats[0] << "," << "AGI: " << chaos_stats[1] << "%" << "," << "STR: " << chaos_stats[2] << "%" << "," << "DEX: " << chaos_stats[3] << "%" << "\n";
+		}
+		myfile.close();
+		remove(old_stash_file_name.c_str());//removing the old stash file
+		rename(new_stash_file_name.c_str(), old_stash_file_name.c_str());//renaming the new stash file
+		delete[] chaos_stats;
+	}
+	return;
+	
 }
+
 bool drop_or_not(int level_selected)
 {
 	//this function determines whether or not the loot will drop based on current dungeon level
@@ -80,6 +165,7 @@ bool drop_or_not(int level_selected)
 	}
 	return drop_or_not;
 }
+
 void drop_loot(string existing_character, int level_selected)
 {
 	//generate loot depending on level_selected
@@ -93,20 +179,15 @@ void drop_loot(string existing_character, int level_selected)
 		received_loot->determine_loot_type();
 		cout << received_loot->loot_type << "\n";
 		cout << received_loot->rarity << "\n";
-		if((read_number_of_runes(existing_character) + 1) <= 5) // if the current number of runes in the stash plus the rune you got is exceeding the limit
+		if(read_number_of_runes_in_stash(existing_character) + 1 <= 5)
 		{
-			loot_generate_stats(existing_character, level_selected, received_loot->rarity, received_loot->loot_type);
+			loot_generate_stats(existing_character, level_selected, 0, received_loot->rarity, received_loot->loot_type, false);//we are not crafting in this case, therefore we can just set left-over rune-powder to whatever
 		}
-		else//the number of runes you currently hold in your inventory would exceed the total allowed if the loot is stashed
+		else
 		{
-			cout << "You have reached the maximum number of runes" << "\n";
-			cout << "Would you like to salvage some of your runes in your stash? 1:Yes 0:No " << "\n";
-			bool salvage;
-			cin >> salvage;
-			if (salvage == true)
-			{
-				//implementing salvage, need to implement rune powder
-			}
+			cout << "Your stash cannot have any more runes, please go salvage at the runemaster!" << "\n";
+			loot_generate_stats(existing_character, level_selected, 0, received_loot->rarity, received_loot->loot_type, false);
+
 		}
 		delete received_loot;
 	}
@@ -114,36 +195,572 @@ void drop_loot(string existing_character, int level_selected)
 	//loot_stats(existing_character, level_selected, received_loot->rarity, received_loot->loot_type);
 	//generate loot stats
 }
-void stash(string existing_character)
+
+//rune functions including rune_master, salvage, powder calculation, craft cost
+void salvage_rune(string existing_character)//gives the amount of rune powder back to player dependent on the rune salvaging
+{
+	cout << "Opening Stash..." << "\n";
+	if (read_number_of_runes_in_stash(existing_character) != 0)//check if your stash is empty
+	{
+		Sleep(1000);
+		stash(existing_character);//display the current stashed runes to player
+		
+		cout << "Please select a rune that you would like to salvage (1,2,3,4,5) or esc to go back to main menu" << "\n";
+		string rune;//the user would enter a number which represent the rune to be salvaged
+		cin >> rune;
+		if (rune != "esc")
+		{
+			if (1 <= stoi(rune) < 6)//if the input rune is within 1 and 5
+			{
+				int choice_of_rune = stoi(rune);//the rune we want to salvage but it will be a int type
+				float* current_character_stats = current_stats(existing_character);
+				float current_rune_powder = current_character_stats[10];//extract current rune_powder
+				ifstream old_stash_file;//for reading a textfile
+				ofstream newfile;//for writing to a textfile
+				string original_character_stash_file = "Characters/" + existing_character + "_stash.txt";
+				string new_character_stash_file = "Characters/" + existing_character + "_new_stash.txt";
+
+				//find the amount of rune powder by calling the extract rune information, it might be confusing but right now extract rune information return rune powder from salvaging 
+				int rune_powder_gained = extract_rune_information(existing_character, choice_of_rune);
+				old_stash_file.open(original_character_stash_file);//we would open the original stash file for reading
+				newfile.open(new_character_stash_file);// open a new stash file for writing
+				string unsalvaged_rune;//this string will store the lines containing the unsalvaged runes 
+				int counter = 0;//find the line in th textfile which corresponds to rune we want to salvage
+				while (!old_stash_file.eof())//run until we reached the rune which is counted by number
+				{
+					getline(old_stash_file, unsalvaged_rune);
+					if (counter != choice_of_rune && !unsalvaged_rune.empty())//if the current rune isn't the rune we want to salvage, we will add the information of the unsalvaged runes into the new file
+					{
+						if (counter == 0)//to account for the first line which contains the amount of rune powder
+						{
+							newfile << "Rune Powder: " << current_rune_powder + rune_powder_gained << "\n";
+							counter++;// need to add rune powder calculate with extraction of rune rarity and rune level
+						}
+						else//not the first line
+						{
+							newfile << unsalvaged_rune << "\n";//the runes that is not salvaged will be added to new file
+							counter++;
+						}
+					}
+					else//if the rune is the one we want to salvage, don't write the line to the new file, and add to counter so we can keep writing the rest of the stash file to the new file
+					{
+						counter++;
+					}
+				}
+				cout << "You have successfully salvaged your rune, you have gained " << rune_powder_gained << " rune powder" << "\n";
+				newfile.close();
+				old_stash_file.close();
+				remove(original_character_stash_file.c_str());
+				rename(new_character_stash_file.c_str(), original_character_stash_file.c_str());
+				return selection_menu(existing_character);
+			}
+			else
+			{
+				cout << "Please enter a valid input for rune salvage, 1~5" << "\n";
+				return salvage_rune(existing_character);
+			}
+		}
+		else
+		{
+			return selection_menu(existing_character);
+		}
+		
+	}
+	else
+	{
+		cout << "Your stash is empty!" << "\n";
+		return selection_menu(existing_character);
+	}
+	
+	//}
+}
+
+int extract_rune_information(string existing_character, int rune)//returns the amount of rune powder gained after salvaging
+{
+
+	//utilizing the code in the salvage rune, we would extract the line containing the salvage rune
+	ifstream myfile; //for reading the textfile
+	string original_character_stash_file = "Characters/" + existing_character + "_stash.txt";
+	int counter = 0;//for finding the line containing the rune that we want to salvage
+	string salvaged_rune;//storing the salvaged rune info
+	myfile.open(original_character_stash_file);//open stash file for reading
+	while (!myfile.eof() && counter != rune + 1)//we are trying to find the rune we are salvaging
+	{
+		getline(myfile, salvaged_rune);
+		counter++;
+	}
+	//now we have the salvaged rune information
+
+	//NEED To implement rune information extraction for calculation of rune powder
+	myfile.close();
+	int first_delimiter = salvaged_rune.find(",");//find the first comma
+	int level_found_rune = stoi(salvaged_rune.substr(7, first_delimiter - 7));
+	string for_finding_next_delimiter= salvaged_rune.substr(first_delimiter + 1,string::npos);
+	int second_delimiter = for_finding_next_delimiter.find(",");//finding the next comma
+	string rarity_of_rune = for_finding_next_delimiter.substr(8, second_delimiter - 8);
+	return rune_powder_calculate(rarity_of_rune, level_found_rune, false);
+	
+}
+
+string* extract_rune_stats(string rune)
+{
+	//because there may be different rarities such as rare and magic, therefore the index at which the occurrence of the string "Type" may be different thus we must get each occurrence of delimiter
+	static string rune_stats[4]{};//first stats is type, second type is dex, third stat is agi, fourth stat is str. fifth stat is hp
+	int first_occurrence_comma = rune.find(",");
+	int second_occurrence_comma = rune.find(",", first_occurrence_comma + 1);
+	int third_occurrence_comma = rune.find(",", second_occurrence_comma + 1);
+	string type = rune.substr(second_occurrence_comma + 7, third_occurrence_comma - second_occurrence_comma - 7);
+	if (type == "Dex")//for each type we make sure that the other stats that aren't related to the rune type are 0, chaos is an exception
+	{
+		string stats = rune.substr(third_occurrence_comma + 8, rune.length() - third_occurrence_comma - 9);
+		rune_stats[0] = "0";
+		rune_stats[1] = "0";
+		rune_stats[2] = stats;
+		rune_stats[3] = "0";
+	}
+	else if (type == "Agi")
+	{
+		string stats = rune.substr(third_occurrence_comma + 8, rune.length() - third_occurrence_comma - 9);
+		rune_stats[0] = stats;
+		rune_stats[1] = "0";
+		rune_stats[2] = "0";
+		rune_stats[3] = "0";
+	}
+	else if (type == "Str")
+	{
+		string stats = rune.substr(third_occurrence_comma + 8, rune.length() - third_occurrence_comma - 9);
+		rune_stats[0] = "0";
+		rune_stats[1] = stats;
+		rune_stats[2] = "0";
+		rune_stats[3] = "0";
+	}
+	else if (type == "HP")
+	{
+		string stats = rune.substr(third_occurrence_comma + 8, rune.length() - third_occurrence_comma - 8);
+		rune_stats[0] = "0";
+		rune_stats[1] = "0";
+		rune_stats[2] = "0";
+		rune_stats[3] = stats;
+	}
+	else if (type == "Chaos")
+	{
+		int fourth_occurrence_comma = rune.find(",", third_occurrence_comma + 1);
+		string hp = rune.substr(third_occurrence_comma + 5, fourth_occurrence_comma - third_occurrence_comma - 5);
+		int fifth_occurrence_comma = rune.find(",", fourth_occurrence_comma + 1);
+		string agi = rune.substr(fourth_occurrence_comma + 6, fifth_occurrence_comma - fourth_occurrence_comma - 7);
+		int sixth_occurrence_comma = rune.find(",", fifth_occurrence_comma + 1);
+		string str = rune.substr(fifth_occurrence_comma + 6, sixth_occurrence_comma - fifth_occurrence_comma - 7);
+		int seventh_occurrence_comma = rune.find(",", sixth_occurrence_comma + 1);
+		string dex = rune.substr(sixth_occurrence_comma + 6, seventh_occurrence_comma - sixth_occurrence_comma - 7);
+		rune_stats[0] = agi;
+		rune_stats[1] = str;
+		rune_stats[2] = dex;
+		rune_stats[3] = hp;
+	}
+	return rune_stats;
+}
+
+int rune_powder_calculate(string rune_rarity, int rune_level, bool crafting)//if player is crafting runes it will cost a lot more rune powder than receiving rune powder from salvaging
+{
+	int rune_powder_price{};//subject to change, this is just how many times is the price of crafting comparing to salvaging
+	if (crafting == true)//if we are crafting
+	{
+		rune_powder_price = 5;
+	}
+	else
+	{
+		rune_powder_price = 1;
+	}
+
+	if (rune_rarity == "common")
+	{
+		return rune_level * rune_powder_price * 2;
+	}
+	else if (rune_rarity == "magic")
+	{
+		return rune_level * rune_powder_price * 5;
+	}
+	else if (rune_rarity == "rare")
+	{
+		return rune_level * rune_powder_price * 40;
+	}
+	else if (rune_rarity == "unique")
+	{
+		return rune_level * rune_powder_price * 500;
+	}
+	else if (rune_rarity == "double unique")
+	{
+		return rune_level * rune_powder_price * 7000;
+	}
+	else if (rune_rarity == "celestial")
+	{
+		return rune_level * rune_powder_price * 175000;
+	}
+	else if (rune_rarity == "double celestial")
+	{
+		return rune_level * rune_powder_price * 7875000;
+	}
+}
+
+void rune_master(string exising_character, int maximum_dungeon_level)
+{
+	float* character_stats = current_stats(exising_character);
+	int current_rune_powder = character_stats[10];
+	bool craftable[4] = { false };//this array is created to see if you are able to craft each rarity dependent on your maximum_dungeon_level
+	int rune_master_option;
+	cout << "You have 3 options: 1.Crafting 2.Salvaging 3.Leaving" << "\n";
+	cin >> rune_master_option;
+	if(rune_master_option == 1)
+	{
+		if (150 <= maximum_dungeon_level)
+		{
+			cout << "The best runes you can craft are unique!" << "\n";
+			craftable[0] = true;
+		}
+		else if (450 <= maximum_dungeon_level)
+		{
+			cout << "The best runes you can craft are double unique!" << "\n";
+			craftable[1] = true;
+		}
+		else if (900 <= maximum_dungeon_level)
+		{
+			cout << "The best runes you can craft are celestial" << "\n";
+			craftable[2] = true;
+		}
+		else if (1800 <= maximum_dungeon_level)
+		{
+			cout << "The best runes you can craft are double celestial" << "\n";
+			craftable[3] = true;
+		}
+		else
+		{
+			cout << "The best runes you can craft are rare" << "\n";
+		}
+		cout << "Please write what rarity what you like to craft? (rare, unique, double unique, celestial, double celestial) or 0 to exit crafting" << "\n";
+		string rarity;
+		cin >> rarity;
+		int rune_craft_level;
+		if (rarity == "rare" || rarity == "magic" || rarity == "common")
+		{
+			cout << "What level of rune would you like to craft (based on your current maximum dungeon level)? or 0 to exit" << "\n";
+			cin >> rune_craft_level;
+			while (rune_craft_level > maximum_dungeon_level ||  rune_craft_level < 0)//while the user input is larger than our maximum dungeon level, we shall keep the user to enter an appropriate level between maximum dungeon level and 0
+			{
+				cout << "Please select a level that is below or equal to your maximum dungeon level (Max Dungeon Level: " << maximum_dungeon_level << " ) or 0 to exit crafting" << "\n";
+				cin >> rune_craft_level;
+
+			}
+			if(rune_craft_level != 0)//if the user didn't want to exit rune master
+			{
+				if (rune_powder_calculate(rarity, rune_craft_level, true) <= current_rune_powder)//if we do possess enough rune powder
+				{
+					cout << "It will cost " << rune_powder_calculate(rarity, rune_craft_level, true) << "rune powder" << "\n";
+					
+					cout << "Please choose the type of rune you would like to craft: Agi, Str, Dex, HP" << "\n";
+					string type_of_rune;
+					cin >> type_of_rune;
+					while (type_of_rune != "Agi" && type_of_rune != "Str" && type_of_rune != "Dex" && type_of_rune != "HP" && type_of_rune != "0")//as long as the user doesn't put a valid input that is either types or a 0 
+					{
+						cout << "Please select a valid type of rune or press 0 to exit crafting" << "\n";
+						cin >> type_of_rune;
+
+					}
+					if (type_of_rune == "0")
+					{
+						return selection_menu(exising_character);
+					}
+					else
+					{
+						int left_over_rune_powder = current_rune_powder - rune_powder_calculate(rarity, rune_craft_level, true);//find the leftover rune powder after crafting
+						loot_generate_stats(exising_character, rune_craft_level, left_over_rune_powder, rarity, type_of_rune, true);//adding rune to stash but this time we are adding because crafted
+						//need to implement changes to stash file because we have crafted a rune therefore the current rune powder amount must change
+						return selection_menu(exising_character);
+					}
+					
+					
+				}
+				else //if we do not possess enough rune powder
+				{
+
+					cout << "You do not have enough rune powder" << "\n";
+					cout << "It will cost " << rune_powder_calculate(rarity, rune_craft_level, true) << " rune powder" << "\n";
+					return selection_menu(exising_character);
+				}
+			}
+			else
+			{
+				return selection_menu(exising_character);
+			}
+			//need to implement crafting cost and if the rune the player is trying to craft is beyond their current rune powder count, we cannot craft
+			
+
+		}
+		else if (rarity == "unique")
+		{
+			if (craftable[0] == true)
+			{
+				cout << "You can craft unique" << "\n";
+			}
+			else
+			{
+				cout << "You can't craft unique yet, you haven't reached the dungeon level" << "\n";
+			}
+		}
+		
+	}
+	else if (rune_master_option == 2)
+	{
+		return salvage_rune(exising_character);
+		
+	}
+	else if (rune_master_option == 3)
+	{
+		return selection_menu(exising_character);
+	}
+}
+//character stash 
+void stash(string existing_character)//it is completed
 {
 	cout << "Displaying current stash" << "\n";
+	int display_only_runes_not_rune_powder = 0;
 	ifstream myfile;
 	myfile.open("Characters/" + existing_character + "_stash.txt");
 	string line;
 	while (!myfile.eof())
 	{
-		getline(myfile, line);
-		cout << line << "\n";
+		display_only_runes_not_rune_powder++;//line one is not included
+		getline(myfile, line);//flushes out the current line
+		if (display_only_runes_not_rune_powder >= 2 && !line.empty())
+		{
+			cout << line << "\n";
+		}
 	}
 	myfile.close();
 	cout << "-----------------------------------------" << "\n";
-	
+	return;
 }
-int read_number_of_runes(string existing_character)
+//character equipped functions
+void display_currently_equipped(string existing_character)
 {
-	int current_stashed_runes = 0;
+	cout << "Currently Equipped:" << "\n";//display currently equipped runes
+	string currently_equipped_runes;
+	ifstream read_current_equipped_runes;
+	string current_equipped_runes_file = "Characters/" + existing_character + "_currently_equipped_runes.txt";
+	read_current_equipped_runes.open(current_equipped_runes_file);
+	while (getline(read_current_equipped_runes, currently_equipped_runes))//output every runes currenly the player is equipped by reading everything in the equipped file
+	{
+		cout << currently_equipped_runes << "\n";
+	}
+	read_current_equipped_runes.close();
+	return;
+}
+
+void equipping_runes(string existing_character)//this function gives the options to equip, unequip, change runes
+{
+	cout << "What would you like to do today? 1.Equip runes 2.Unequip runes 3.Change runes 4.Exit" << "\n";
+	int options;
+	cin >> options;
+	switch (options)
+	{
+	case 1://equipping rune
+	{
+		
+		if (read_number_of_runes_equipped(existing_character) < 5)
+		{
+			if (read_number_of_runes_in_stash(existing_character) > 0)
+			{
+				display_currently_equipped(existing_character);
+				cout << "-----------------------------------------" << "\n";
+				stash(existing_character);//display the current stash
+				int rune_option;
+				cout << "Which rune would you like to equip ? (Choose 1,2,3,4,5 or 0 to exit)" << "\n";
+				cin >> rune_option;
+				while (rune_option > 5 || rune_option < 0)
+				{
+					cout << "This is not a valid option, please enter 1,2,3,4,5 or 0 to exit" << "\n";
+					cin >> rune_option;
+				}
+				if (rune_option != 0)
+				{
+					int counter = 0;
+					float* current_character_stats = current_stats(existing_character);
+					float current_rune_powder = current_character_stats[10];//extract current rune_powder
+
+					ifstream read_current_stash;
+					ofstream write_to_current_equipped;
+					ofstream the_not_equipped_runes;
+					string old_stash_file = "Characters/" + existing_character + "_stash.txt";
+					string new_stash_file = "Characters/" + existing_character + "_new_stash.txt";
+					string current_equipped_runes_file = "Characters/" + existing_character + "_currently_equipped_runes.txt";
+					read_current_stash.open(old_stash_file);//we have to add the rune we want to equip to the current_equipped file
+					string rune_to_equip;
+					write_to_current_equipped.open(current_equipped_runes_file, ios::app); //we want to add the rune we are equipping to the currently equipped
+					the_not_equipped_runes.open(new_stash_file);
+					while (getline(read_current_stash, rune_to_equip))//reading the stash file to find the rune we want to equip
+					{
+						if (counter == rune_option)//for the rune we are equipping
+						{
+							write_to_current_equipped << rune_to_equip << "\n";//if the line containing the string of the rune we want to equip we write it to the currently equipped
+							counter++;
+						}
+						else if (counter == 0)
+						{
+							the_not_equipped_runes << "Rune Powder: " << current_rune_powder << "\n";
+							counter++;
+						}
+						else
+						{
+							the_not_equipped_runes << rune_to_equip << "\n";
+							counter++;
+						}
+					}
+					read_current_stash.close();
+					write_to_current_equipped.close();
+					//now we have added the non-equipped runes into the new stash file
+					the_not_equipped_runes.close();
+					remove(old_stash_file.c_str());
+					rename(new_stash_file.c_str(), old_stash_file.c_str());
+					//now we have finished equipping and removing the rune from the stash
+					return selection_menu(existing_character);
+
+				}
+				else
+				{
+					return selection_menu(existing_character);
+				}
+			}
+			else
+			{
+				cout << "Your stash is currently empty!" << "\n";
+				return selection_menu(existing_character);
+			}
+		}
+		else
+		{
+			cout << "You currently cannot equip any more runes!" << "\n";
+			return selection_menu(existing_character);
+		}
+		
+	}
+	case 2://for unequipping runes
+	{
+		//if the character is not equipping any runes, we can not unequip runes
+		if (read_number_of_runes_equipped(existing_character) > 0)
+		{
+			if (read_number_of_runes_in_stash(existing_character) < 5)// if the number of runes in the stash is less than 5
+			{
+				display_currently_equipped(existing_character);
+				cout << "-----------------------------------------" << "\n";
+				stash(existing_character);
+				cout << "Which rune would you like to unequip? 1,2,3,4,5 or press 0 to exit" << "\n";
+				//read_old_currently_equipped.open()
+				int rune_to_unequip;
+				cin >> rune_to_unequip;
+				while (rune_to_unequip > read_number_of_runes_equipped(existing_character) || rune_to_unequip < 0)//if the player enters an option that is more than the number of runes they are currently wearing
+				{
+					cout << "This is not a valid option, please enter 1,2,3,4,5 or 0 to exit" << "\n";
+					cin >> rune_to_unequip;
+				}
+				if (rune_to_unequip != 0)
+				{
+					string new_currently_equipped = "Characters/" + existing_character + "_new_currently_equipped_runes.txt";
+					string old_currently_equipped = "Characters/" + existing_character + "_currently_equipped_runes.txt";
+					string current_stash = "Characters/" + existing_character + "_stash.txt";
+					ofstream write_current_stash;//for writing to the current stash
+					ifstream read_old_currently_equipped;//for reading from the currently equipped
+					ofstream write_new_currently_equipped;//for writing to the new currently equipped
+					write_current_stash.open(current_stash,ios::app);//append the rune unequipped to the stash
+					read_old_currently_equipped.open(old_currently_equipped);
+					write_new_currently_equipped.open(new_currently_equipped, ios::app);//append the runes that are not unequipped to the new equip file
+					int counter = 1;//for counter in reading the currently equipped runes
+					string rune_equipped;
+					//read the currently equipped runes and add the runes that are not being unequipped into the new equipped file
+					while(getline(read_old_currently_equipped, rune_equipped))// write the unequipped rune information into the stash file and write the still equipped runes into the new equipped file
+					{
+						if (counter != rune_to_unequip)
+						{
+							write_new_currently_equipped << rune_equipped << "\n";
+							counter++;
+						}
+						else
+						{
+							write_current_stash << rune_equipped << "\n";
+							counter++;
+						}
+					}
+					write_current_stash.close();
+					read_old_currently_equipped.close();
+					write_new_currently_equipped.close();
+					remove(old_currently_equipped.c_str());
+					rename(new_currently_equipped.c_str(), old_currently_equipped.c_str());
+				}
+				
+				return selection_menu(existing_character);
+			}
+			else
+			{
+				cout << "Your stash is full! Please salvage some runes!" << "\n";
+				return selection_menu(existing_character);
+			}
+		}
+		else
+		{
+			cout << "You are currently not equipping any runes therefore you cannot unequip!" << "\n";
+			return selection_menu(existing_character);
+		}
+	}
+	case 3:
+	{
+
+	}
+	case 4:
+	{
+		return selection_menu(existing_character);
+	}
+	}
+
+
+}
+
+int read_number_of_runes_equipped(string existing_character)
+{
+	int current_equipped_runes = 0;//we will read 6 in total, and 6 is the maximum
+	string line;
+	ifstream read_file;
+	read_file.open("Characters/" + existing_character + "_currently_equipped_runes.txt");
+	while (getline(read_file, line))
+	{
+		if (line.find("Rarity") != string::npos)
+		{
+			current_equipped_runes++; //basically count how many runes are currently in the stash
+		}
+	}
+	read_file.close();
+
+	return current_equipped_runes;
+}
+
+int read_number_of_runes_in_stash(string existing_character)//it is completed
+{
+	int current_stashed_runes = 0;//we will read 6 in total, and 6 is the maximum
 	string line;
 	ifstream read_file;
 	read_file.open("Characters/" + existing_character + "_stash.txt");
 	while (getline(read_file, line))
 	{
-		current_stashed_runes++; //basically count how many runes are currently in the stash
+		if (line.find("Rarity") != string::npos)
+		{
+			current_stashed_runes++; //basically count how many runes are currently in the stash
+		}
 	}
 	read_file.close();
 
 	return current_stashed_runes;
 }
-void new_stats(string existing_character)//after levelling we have new stats
+
+//character growth including functions such as new_stats, growth_rate...etc
+
+void new_stats(string existing_character)//after levelling we have new stats//it is completed
 {
 	float* current_growth_rate = growth_rate(existing_character);
 	float* current_stats_character = current_stats(existing_character);
@@ -166,8 +783,25 @@ void new_stats(string existing_character)//after levelling we have new stats
 
 }
 
-float* growth_rate(string existing_character)
+float* growth_rate(string existing_character)//it is completed
 {
+	ifstream read_from_equipment_file;
+	string equipment_file = "Characters/" + existing_character + "_currently_equipped_runes.txt";
+	read_from_equipment_file.open(equipment_file);//we will read the equipment data and update the stats
+	string rune_information;//for storing the info of rune currently equipped 
+	float total_equipment_stats[4]{};
+	while (getline(read_from_equipment_file, rune_information))
+	{
+		if(!rune_information.empty())
+		{
+			string* individual_rune_stats = extract_rune_stats(rune_information);//extract the stats of the rune from current line
+			total_equipment_stats[0] += stof(individual_rune_stats[0]);//agility growth
+			total_equipment_stats[1] += stof(individual_rune_stats[1]);//strength growth
+			total_equipment_stats[2] += stof(individual_rune_stats[2]);//dexiterity growth
+			total_equipment_stats[3] += stof(individual_rune_stats[3]);//hp growth
+		}
+		
+	}
 	string agi_growth = "AGI Growth";
 	string str_growth = "STR Growth";
 	string dex_growth= "DEX Growth";
@@ -220,18 +854,19 @@ float* growth_rate(string existing_character)
 	current_str_growth = current_str_growth.substr(12, current_str_growth.length() - 2);
 	current_hp_growth = current_hp_growth.substr(11, current_hp_growth.length() - 2);
 	current_attack_growth = current_attack_growth.substr(12, current_attack_growth.length() - 2);
-	growth_rate_character[0] = stof(current_hp_growth);
+	growth_rate_character[0] = stof(current_hp_growth) + total_equipment_stats[3];
 	growth_rate_character[1] = stof(current_attack_growth);
-	growth_rate_character[2] = stof(current_agi_growth);
-	growth_rate_character[3] = stof(current_str_growth);
-	growth_rate_character[4] = stof(current_dex_growth);
+	growth_rate_character[2] = stof(current_agi_growth)+ total_equipment_stats[0];
+	growth_rate_character[3] = stof(current_str_growth) +total_equipment_stats[1];
+	growth_rate_character[4] = stof(current_dex_growth) + total_equipment_stats[2];
 	
 	return growth_rate_character;
 
 
 
 }
-float current_exp_requirement(float level)//exp requirement is not part of the array from return of current_stats 
+
+float current_exp_requirement(float level)//exp requirement is not part of the array from return of current_stats //it is completed
 {
 	float required_exp = 20;
 	for (int i = 0; i < level; i++)//calculate the exp requirement for CURRENT level
@@ -240,7 +875,8 @@ float current_exp_requirement(float level)//exp requirement is not part of the a
 	}
 	return required_exp;
 }
-void gain_exp(float exp_gain, string existing_character)
+
+void gain_exp(float exp_gain, string existing_character)//completed
 {
 	float* character_stats = current_stats(existing_character);//retrieve the current stats of the character
 	if (character_stats[8] + exp_gain >= current_exp_requirement(character_stats[7]))//determine if the exp gained is enough to level up
@@ -275,7 +911,8 @@ void gain_exp(float exp_gain, string existing_character)
 
 	}
 }
-void start_dungeon(int level_selected, string existing_character)
+//generate comabt
+void start_dungeon(int level_selected, string existing_character)//completed
 {
 	cout << "-----------------------------------------" << "\n";
 	cout << "Currently generating dungeon ...." << "\n";
@@ -285,7 +922,6 @@ void start_dungeon(int level_selected, string existing_character)
 	float* your_character_stats = current_stats(existing_character);
 	float current_hp = your_character_stats[6];//for tracking the hp in the dungeon
 	int current_level = your_character_stats[7]; //extracting current stats
-	//float current_defense = stof(your_character_stats[2]);//extracting current defense
 	if (level_selected < 5)
 	{
 		number_of_enemies = 2;
@@ -300,10 +936,15 @@ void start_dungeon(int level_selected, string existing_character)
 		Sleep(2500);//make a lag to simulate fighting
 		goblin* enemies_goblins = new goblin(level_selected, current_level, your_character_stats[2]);
 		current_number_enemies++;
+		cout << enemies_goblins->attack_power << "\n";
+		cout << enemies_goblins->health << "\n";
+		/*cout << enemies_goblins->attack_power << "\n";
+		cout << enemies_goblins->health << "\n";*/
 		current_hp = combat(enemies_goblins, existing_character, current_hp);
+		cout << current_hp << "\n";
 		if (current_hp > 0)//after combat, only if our current hp is above zero would give us exp, loot
 		{
-			cout << "You win this battle! You gained " << enemies_goblins->exp << "\n";
+			cout << "You win this battle! You gained " << enemies_goblins->exp << " exp" << "\n";
 			update_number_of_enemies_killed(existing_character, level_selected);
 			gain_exp(enemies_goblins->exp, existing_character);//if your current hp is greater than 0, you gain exp, if you are dead, you don't get exp
 			drop_loot(existing_character, level_selected);
@@ -330,6 +971,7 @@ void start_dungeon(int level_selected, string existing_character)
 	return dungeon_selection(existing_character);
 	
 }
+
 void update_number_of_enemies_killed(string existing_character, int level_selected)
 {
 	ifstream myfile;
@@ -405,6 +1047,7 @@ void update_number_of_enemies_killed(string existing_character, int level_select
 	rename(new_enemies_kill_count_file.c_str(), current_number_enemies_kill_count_file.c_str());
 
 }
+
 float combat(goblin* enemies, string existing_character, float current_hp)
 {
 	float* your_character_stats = current_stats(existing_character);//we aren't editing the character file, so these stats are just extracted using current stats and the stats are used to compare enemies and you
@@ -442,80 +1085,99 @@ float combat(goblin* enemies, string existing_character, float current_hp)
 	return current_hp;
 		
 }
-
+//Game interface
 void selection_menu(string existing_character)//need to IMPLEMENT exiting game in every case
 {
 	cout << "-----------------------------------------" << "\n";
 	cout << "0.Dungeon" << "\n" << "1.Runemaster" << "\n" << "2.Stash" << "\n" << "3.View your current stats" << "\n" << "4.Change runes" << "\n" << "5.Exit game" << "\n";
-	cout << "You can stop playing by typing 4!" << "\n";
+	cout << "You can stop playing by typing 5!" << "\n";
 	cout << "Please type 0,1,2,3,4 or 5" << "\n";
 	int option;
 	cin >> option;
 
-	switch (option)
+	
+
+	//1 = Yes, 0 = No
+	if (check_input_if_letter())
 	{
-
-		//1 = Yes, 0 = No
-		case 0:
+		cout << "Please enter a valid input! 1~5" << "\n";
+		return selection_menu(existing_character);
+	}
+	else
+	{
+		if (option == 0)
 		{
-			int choice;
-			cout << "Are you sure you want to go to dungeon ? 1: Yes 0: No" << "\n";//ask player if they wanted to go to dungeon
-			cin >> choice;
-			if (choice == 0)//if the choice is 0
+			if (read_number_of_runes_in_stash(existing_character) < 5)
 			{
-				return selection_menu(existing_character);//call the function again given the options 
+				int choice;
+				cout << "Are you sure you want to go to dungeon ? 1: Yes 0: No" << "\n";//ask player if they wanted to go to dungeon
+				cin >> choice;
+				if (choice == 0)//if the choice is 0
+				{
+					return selection_menu(existing_character);//call the function again given the options 
+				}
+				else if (choice == 1)
+				{
+					return dungeon_selection(existing_character);
+
+				}
 			}
-			if (choice == 1)
+			else
 			{
-				return dungeon_selection(existing_character);
-				
-
-
+				cout << "Please salvage your runes in runemaster!" << "\n";
+				return selection_menu(existing_character);
 			}
 
 
 		}
-		case 1:
+		else if (option == 1)
 		{
-			return;
+			float* character_stats = current_stats(existing_character);
+			return rune_master(existing_character, character_stats[9]);
 			//NEED TO IMPLEMENT rune master
-			
+
 
 			//}
 		}
-		case 2:
+		else if (option == 2)
 		{
 			//need to implement stash
 			stash(existing_character);
 			return selection_menu(existing_character);
-			
-			
+
+
 
 		}
-		case 3:
+		else if (option == 3)
 		{
 			//view current stats
 			return view_stats(existing_character);
 		}
-		case 4:
+		else if (option == 4)
 		{
 			//implement change runes
+			return equipping_runes(existing_character);
 		}
-		case 5:
+		else if (option == 5)
 		{
 			cout << "Ending the game...." << "\n";
 			return;
 		}
-
+		else if (option < 0 || option > 5)
+		{
+			cout << "Please enter a valid option! 1~5" << "\n";
+			return selection_menu(existing_character);
+		}
 	}
-	return;
+	
+	
 }
 
 float* current_stats(string existing_character)
 {//extraing stats for character as an array
 	ifstream myfile;
 	myfile.open("Characters/" + existing_character + ".txt");
-	static float stats[10];
+	static float stats[11];
 	string HP = "HP";
 	string attack = "ATT";
 	string def = "DEF";
@@ -589,7 +1251,7 @@ float* current_stats(string existing_character)
 	stats[3] = stof(current_dex);
 	stats[4] = stof(current_str);
 	//if you are a barb we have to take into account str for damage as well, but for rogue we take into account agi as damage
-	float total_damage = (1 + stof(current_str) / 100) * stof(current_attack);
+	float total_damage = (1 + stof(current_str) / 40) * stof(current_attack);
 	string current_total_damage = to_string(total_damage);
 	stats[5] = stof(current_total_damage);
 	stats[6] = stof(current_hp);
@@ -615,9 +1277,22 @@ float* current_stats(string existing_character)
 	stats[7] = stof(current_level);
 	stats[8] = stof(current_exp);
 	stats[9] = stof(current_max_dungeon_level);
+	myfile.open("Characters/" + existing_character + "_stash.txt");
+	string current_rune_powder = "Rune Powder:";
+	while (std::getline(myfile, line))
+	{
+		if (line.find(current_rune_powder) != string::npos)
+		{
+			current_rune_powder = line;
+		}
+	}
+	current_rune_powder = current_rune_powder.substr(13, current_rune_powder.length() - 1);
+	stats[10] = stof(current_rune_powder);
+	myfile.close();
 	return stats;
 
 }
+
 void dungeon_selection(string existing_character)
 {
 	float* character_stats = current_stats(existing_character);
@@ -634,7 +1309,7 @@ void dungeon_selection(string existing_character)
 		}
 		if (stof(level_selection) <= current_max_dungeon_level)
 		{
-			cout << "Are you sure you are going to level " << stof(level_selection) << "? 1: Yes, 0: No " << "\n";
+			cout << "Are you sure you are going to level " << stof(level_selection) << " ? 1: Yes, 0: No " << "\n";
 			string level_confirmation;
 			cin >> level_confirmation;//asking the player to confirm they want to go to this level
 			if (level_confirmation == "1")//the player would like to go to this level
@@ -688,11 +1363,13 @@ void view_stats(string existing_character)
 	cout << "AGI Growth: " << growth_array[2] << "\n";
 	cout << "STR Growth: " << growth_array[3] << "\n";
 	cout << "DEX Growth: " << growth_array[4] << "\n";
+	cout << "Current Rune Powder: " << stats_array[10] << "\n";
 	cout << "-----------------------------------------" << "\n";
 	return selection_menu(existing_character);
 
 
 }
+
 void generating(string character_name)//generating your character, NOT implementing the inventory system yet, just going with runes
 {
 	
@@ -721,7 +1398,7 @@ void generating(string character_name)//generating your character, NOT implement
 			cin >> yes_no;
 			if (yes_no == 1)
 			{
-				srand(time(0));
+				srand(time(0) + rand());
 				myfile << "Barbarian" << "\n";//defining the stats of a barbarian
 				/*myfile << "-----------------------------------------" << "\n";
 				myfile << "Currently Equipped:" << "\n";
@@ -741,10 +1418,10 @@ void generating(string character_name)//generating your character, NOT implement
 				myfile.close();
 				string character_growth = "Characters/" + character_name + "_growth.txt";
 				myfile.open(character_growth, ios::app);				
-				myfile << "HP Growth: " << to_string(15 + rand() % 10) << "\n";
+				myfile << "HP Growth: " << to_string(40 + rand() % 30) << "\n";
 				myfile << "ATT Growth: " << to_string(70 + rand() % 20) << "%" << "\n";
 				myfile << "AGI Growth: " << to_string(40 + rand() % 15) << "%" << "\n";
-				myfile << "STR Growth: " << to_string(130 + rand() % 30) << "%" << "\n";
+				myfile << "STR Growth: " << to_string(230 + rand() % 50) << "%" << "\n";
 				myfile << "DEX Growth: " << to_string(40 + rand() % 15) << "%" << "\n";
 				myfile.close();
 				//string character_inventory = character_name + "_inventory.txt";
@@ -768,6 +1445,10 @@ void generating(string character_name)//generating your character, NOT implement
 				myfile.close();
 				string character_stash= "Characters/" + character_name + "_stash.txt";
 				myfile.open(character_stash, ios::app);//creating a stahs file for character
+				myfile << "Rune Powder: 0 " << "\n";
+				myfile.close();
+				string currently_equipped = "Characters/" + character_name + "_currently_equipped_runes.txt";
+				myfile.open(currently_equipped);
 				myfile.close();
 				string number_of_kills = "Characters/" + character_name + "_number_of_kills_in_each_difficulty.txt";
 				myfile.open(number_of_kills, ios::app);
@@ -804,6 +1485,7 @@ void generating(string character_name)//generating your character, NOT implement
 	}
 	return;
 }
+
 bool find_charactername(string character_name)
 {
 		ifstream  myfile("Save.txt");
@@ -820,6 +1502,7 @@ bool find_charactername(string character_name)
 		}
 		return found;
 }
+
 void delete_character_save(string existing_character)
 {
 	//create a temporary file to save the characters that aren't getting deleted
@@ -855,8 +1538,11 @@ void delete_character_save(string existing_character)
 	remove(character_growth_file.c_str());//removing the character growth file
 	string current_enemies_kill_file = "Characters/" + existing_character + "_number_of_kills_in_each_difficulty.txt";
 	remove(current_enemies_kill_file.c_str());
+	string current_equipped_file = "Characters/" + existing_character + "_currently_equipped_runes.txt";
+	remove(current_equipped_file.c_str());
 	return;
 }
+
 void delete_character(string existing_character)//implementing deletion of character when the game first boot
 {
 	
@@ -1012,9 +1698,24 @@ void begin_game()//need to implement if a character with the same name as been f
 	return;
 }
 
+bool check_input_if_letter()
+{
+	if (!cin.good())
+	{
+		cin.clear();//clears state of cin
+		cin.ignore(INT_MAX, '\n'); // this clears console
+		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
 int main() 
 {
-
+	/*cout << read_number_of_runes_equipped("Jerry") << "\n";
+	cout << read_number_of_runes_in_stash("Jerry") << "\n";*/
 	if (!_mkdir("Characters"))
 	{
 		_mkdir("Characters");
